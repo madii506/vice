@@ -43,6 +43,8 @@ function fromTok(b, p = {}, col = null) {
     bundle: a.bundlerStats ? a.bundlerStats.holdingPct ?? null : null, tw: b.twitter || '', web: b.website || '', tg: b.telegram || '',
     ch5: s5.priceChange ?? null, ch1: s1.priceChange ?? null, ch24: s24.priceChange ?? null, nb5: s5.numBuys ?? null, ns5: s5.numSells ?? null };
 }
+// coins named after hate are left out of the terminal
+const BAD = /hitler|nazi|swastika|\b1488\b|\bkkk\b|holocaust|n[i1!]gg|f[a@]gg[o0]t|\bpedo|\brape\b|\bisis\b/i;
 const merge = t => { const o = T.by.get(t.mint); if (o) for (const k of Object.keys(t)) if (t[k] == null || t[k] === '') t[k] = o[k]; T.by.set(t.mint, t); return t; };
 
 // ---------------------------------------------------------------- the pulse
@@ -55,7 +57,7 @@ async function poll() {
     const d = await gems();
     for (const [k] of COLS) {
       for (const t of T.pulse[k]) if (t.mcap != null) T.prev.set(t.mint, t.mcap);
-      T.pulse[k] = ((d[k] && d[k].pools) || []).filter(p => p && p.baseAsset && p.baseAsset.id).map(p => merge(fromTok(p.baseAsset, p, k))).filter(t => t.sym || t.name);
+      T.pulse[k] = ((d[k] && d[k].pools) || []).filter(p => p && p.baseAsset && p.baseAsset.id).map(p => merge(fromTok(p.baseAsset, p, k))).filter(t => (t.sym || t.name) && !BAD.test(t.sym + ' ' + t.name));
     }
     T.at = Date.now(); T.err = 0; draw();
   } catch { T.err++; }
@@ -167,12 +169,12 @@ function info() {
   $('#cdKv').innerHTML = [['Price', t.price ? '$' + (t.price >= .01 ? t.price.toFixed(4) : t.price.toPrecision(3)) : '—'], ['Market cap', cmp(t.mcap)], ['Volume 24h', cmp(t.vol)], ['Holders', fin(t.holders) ? amt(t.holders).replace('.00', '') : '—'],
     ['Curve', t.col === 'graduated' || t.grad ? 'Migrated' : fin(t.prog) ? t.prog.toFixed(1) + '%' : '—'], ['5m', fin(t.ch5) ? `<span class="${cls(t.ch5)}">${pct(t.ch5, 1)}</span>` : '—'], ['1h', fin(t.ch1) ? `<span class="${cls(t.ch1)}">${pct(t.ch1, 1)}</span>` : '—'], ['You hold', mine ? amt(mine) : '—']]
     .map(([k, v]) => `<div><span class="k">${k}</span><b>${v}</b></div>`).join('');
-  const ok = (good, txt, bad) => `<div class="sf ${good == null ? '' : good ? 'ok' : 'bad'}"><i></i><span>${good == null ? txt + ': unknown' : good ? txt : bad}</span></div>`;
+  const ok = (good, txt, bad, unk) => `<div class="sf ${good == null ? '' : good ? 'ok' : 'bad'}"><i></i><span>${good == null ? (unk || txt) + ': unknown' : good ? txt : bad}</span></div>`;
   $('#cdSafe').innerHTML = `<span class="k" style="margin-bottom:8px">Safety checks</span>
     ${ok(t.mintOff, 'Mint authority off', 'Mint authority is still on: more can be printed')}
     ${ok(t.freezeOff, 'Freeze authority off', 'Freeze authority is on: your coins can be frozen')}
-    ${ok(fin(t.top10) ? t.top10 < 30 : null, `Top 10 hold ${fin(t.top10) ? t.top10.toFixed(1) + '%' : ''}`, `Top 10 hold ${fin(t.top10) ? t.top10.toFixed(1) : ''}%: concentrated`)}
-    ${ok(fin(t.bundle) ? t.bundle < 15 : null, `Bundlers hold ${fin(t.bundle) ? t.bundle.toFixed(1) + '%' : ''}`, `Bundlers hold ${fin(t.bundle) ? t.bundle.toFixed(1) : ''}%`)}
+    ${ok(fin(t.top10) ? t.top10 < 30 : null, `Top 10 hold ${fin(t.top10) ? t.top10.toFixed(1) + '%' : ''}`, `Top 10 hold ${fin(t.top10) ? t.top10.toFixed(1) : ''}%: concentrated`, 'Top 10 holders')}
+    ${ok(fin(t.bundle) ? t.bundle < 15 : null, `Bundlers hold ${fin(t.bundle) ? t.bundle.toFixed(1) + '%' : ''}`, `Bundlers hold ${fin(t.bundle) ? t.bundle.toFixed(1) : ''}%`, 'Bundlers')}
     ${fin(t.devMints) ? ok(t.devMints < 10, `Dev launched ${t.devMints} coin${t.devMints === 1 ? '' : 's'}`, `Dev launched ${t.devMints} coins`) : ''}
     <div class="soc">${t.tw ? `<a class="link" href="${esc(link(t.tw, 'https://x.com/'))}" target="_blank" rel="noopener">X</a>` : ''}${t.web ? `<a class="link" href="${esc(link(t.web, 'https://'))}" target="_blank" rel="noopener">Website</a>` : ''}${t.tg ? `<a class="link" href="${esc(link(t.tg, 'https://t.me/'))}" target="_blank" rel="noopener">Telegram</a>` : ''}</div>`;
   const ic = $('#cdIcon'); if (ic && !ic.querySelector('img') && t.icon) ic.innerHTML = icon(t);
@@ -253,8 +255,8 @@ function draw2(C) {
   if (!C || C.length < 2) { if (e) { e.hidden = false; e.textContent = 'Not enough trades for a chart yet.'; } return; }
   if (e) e.hidden = true;
   const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); cv.width = r.width * d; cv.height = r.height * d; const g = cv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
-  const W = r.width, H = r.height, lo = Math.min(...C.map(x => x.l)), hi = Math.max(...C.map(x => x.h)), y = v => 8 + (H - 26) * (1 - (v - lo) / (hi - lo || 1)), bw = Math.max(1.5, W / C.length * .62);
-  C.forEach((c, i) => { const x = (i + .5) / C.length * W, up = c.c >= c.o; g.strokeStyle = g.fillStyle = up ? '#5dffa6' : '#ff7b93'; g.beginPath(); g.moveTo(x, y(c.h)); g.lineTo(x, y(c.l)); g.lineWidth = 1; g.stroke(); const t0 = y(Math.max(c.o, c.c)), t1 = y(Math.min(c.o, c.c)); g.fillRect(x - bw / 2, t0, bw, Math.max(1, t1 - t0)); });
+  const W = r.width, H = r.height, lo = Math.min(...C.map(x => x.l)), hi = Math.max(...C.map(x => x.h)), y = v => 8 + (H - 26) * (1 - (v - lo) / (hi - lo || 1)), slot = W / Math.max(C.length, 48), bw = Math.max(1.5, slot * .62);
+  C.forEach((c, i) => { const x = W - (C.length - i - .5) * slot, up = c.c >= c.o; g.strokeStyle = g.fillStyle = up ? '#5dffa6' : '#ff7b93'; g.beginPath(); g.moveTo(x, y(c.h)); g.lineTo(x, y(c.l)); g.lineWidth = 1; g.stroke(); const t0 = y(Math.max(c.o, c.c)), t1 = y(Math.min(c.o, c.c)); g.fillRect(x - bw / 2, t0, bw, Math.max(1, t1 - t0)); });
   g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '700 10.5px Inter'; const f = v => '$' + (v >= .01 ? v.toFixed(4) : v.toPrecision(3)); g.fillText(f(hi), 4, 14); g.fillText(f(lo), 4, H - 4);
   const s = $('#cdChS'), last = C[C.length - 1].c, first = C[0].o; if (s) { s.textContent = pct((last / first - 1) * 100, 1) + ' over ' + C.length + ' candles'; s.className = 'sm ' + cls(last - first); }
 }
