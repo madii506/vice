@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
 <link rel="preload" href="/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/app.css?v=2">
+<link rel="stylesheet" href="/app.css?v=4">
 </head>
 <body class="intro">
 <canvas id="world" aria-hidden="true"></canvas>
@@ -30,10 +30,7 @@
 <div id="flash" aria-hidden="true"></div>
 
 <main id="home">
-  <h1 id="title" aria-label="The first neobank funded by dirty bags.">
-    <span class="l1"><i>The</i> <i>first</i> <i>neobank</i></span>
-    <span class="l2"><i>funded</i> <i>by</i> <i>dirty</i> <i>bags.</i></span>
-  </h1>
+  <h1 class="sr">VICE</h1>
   <div class="ctas">
     <button id="enter" class="cta"><span>Enter world</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button id="homeConnect" class="ghost"><span class="dot"></span><span class="lbl">Connect wallet</span></button>
@@ -44,7 +41,7 @@
   <header class="tb">
     <button class="brand" id="leave" aria-label="Back to the street"><span class="chrome">VICE</span></button>
     <nav id="tabs" aria-label="Sections">
-      <button data-sec="wash">Wash</button><button data-sec="card">Card</button><button data-sec="wanted">Wanted</button><button data-sec="ttwo">$TTWO</button><button data-sec="receipts">Receipts</button><button data-sec="faq">FAQ</button>
+      <button data-sec="wash">Wash</button><button data-sec="term">Terminal</button><button data-sec="statement">Statement</button><button data-sec="card">Card</button><button data-sec="wanted">Wanted</button><button data-sec="ttwo">$TTWO</button><button data-sec="receipts">Receipts</button><button data-sec="faq">FAQ</button>
     </nav>
     <div class="tb-r">
       <span class="pill" id="tbGta"><span class="k">GTA VI</span><b id="tbGtaT">—</b></span>
@@ -74,6 +71,6 @@
 
 <div id="toasts" aria-live="polite"></div>
 <noscript><p class="nojs">VICE needs JavaScript to wash your bags.</p></noscript>
-<script type="module" src="/main.js?v=2"></script>
+<script type="module" src="/main.js?v=3"></script>
 </body>
 </html>

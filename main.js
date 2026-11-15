@@ -79,7 +79,7 @@ on('wallet', () => {
   walletLabels();
   if (wallet.W.address) { A.st.scan = null; A.st.result = null; A.scan(); }
   else { A.st.scan = null; A.st.result = null; A.setBlips(null); A.renderAcct(); A.renderPane(); }
-  A.renderLive();
+  A.renderLive(); A.onWallet();
 });
 on('wallets', () => {});
 setTimeout(() => wallet.restore(), 400);

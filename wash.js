@@ -40,7 +40,7 @@ export async function scan(owner) {
   const solUsd = meta[SOL_MINT] && meta[SOL_MINT].usdPrice || null;
   for (const it of items) {
     const m = meta[it.mint];
-    if (m) { it.sym = m.symbol || null; it.name = m.name || null; it.icon = m.icon || null; if (m.usdPrice != null) it.usd = it.ui * m.usdPrice; }
+    if (m) { it.sym = m.symbol || null; it.name = m.name || null; it.icon = m.icon || null; if (m.usdPrice != null) { it.usd = it.ui * m.usdPrice; it.price = m.usdPrice; } it.ch24 = m.stats24h ? m.stats24h.priceChange ?? null : null; }
     if (it.native) { it.sym = 'wSOL'; it.name = 'Wrapped SOL'; it.usd = solUsd != null ? it.ui * solUsd : null; }
     if (it.kind !== 'dust') continue;
     if (it.decimals === 0 && it.raw === '1') { it.kind = 'keep'; it.why = 'Looks like an NFT'; }

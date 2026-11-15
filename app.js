@@ -5,6 +5,7 @@ import * as wallet from './wallet.js';
 import * as wash from './wash.js';
 import { drawCard, WAYS } from './cardart.js';
 import { tokens, gtPools, gtCandles, SOL_MINT } from './rpc.js';
+import * as TM from './term.js';
 
 const MAX_RUN = 200, MAX_ROWS = 250;
 export const st = { sec: 'wash', scan: null, scanning: false, washing: null, result: null, err: null, tab: 'empty', q: '', sort: 'rent', ttwo: null, solUsd: null, range: '7D',
@@ -15,26 +16,30 @@ const pane = () => $('#pane');
 
 // ---------------------------------------------------------------- shell
 export function mount() {
-  $$('#tabs button').forEach(b => b.onclick = () => show(b.dataset.sec));
+  $$('#tabs button').forEach(b => b.onclick = () => { if (b.dataset.sec === 'term') TM.T.sel = null; show(b.dataset.sec); });
   document.addEventListener('click', e => {
     const t = e.target.closest('[data-sec]'); if (t && !t.closest('#tabs')) { show(t.dataset.sec); if (!wide()) $('#pane').scrollIntoView({ behavior: 'smooth' }); }
   });
   addEventListener('resize', () => { clearTimeout(mount.rt); mount.rt = setTimeout(dock, 120); });
   // the panels slide in: measure the slot again once they've landed
   $('#acct').addEventListener('animationend', () => dock());
+  TM.T.ctx = { render: () => { if (st.sec === 'term') renderPane(); }, connect: connectFlow };
   renderAcct(); renderLive(); show(st.sec, true);
 }
 export function show(sec, quiet) {
+  if (st.sec === 'term' && sec !== 'term') TM.stop();
   st.sec = sec; $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.sec === sec));
-  renderPane();
+  const app = $('#app'); if (app) app.classList.toggle('wide', sec === 'term');
+  renderPane(); requestAnimationFrame(dock);
   if (!quiet) store.set('vice:sec', sec);
 }
 const SECS = {
-  wash: () => washSec(), card: () => cardSec(), wanted: () => wantedSec(), ttwo: () => ttwoSec(), receipts: () => receiptsSec(), faq: () => faqSec(),
+  wash: () => washSec(), term: () => TM.termSec(), statement: () => statementSec(), card: () => cardSec(), wanted: () => wantedSec(), ttwo: () => ttwoSec(), receipts: () => receiptsSec(), faq: () => faqSec(),
 };
 export function renderPane(keepScroll) {
   const p = pane(); if (!p) return; const y = p.scrollTop;
-  const { h, b, bar = '', after: af } = SECS[st.sec]();
+  const { h, b, bar = '', after: af, full } = SECS[st.sec]();
+  p.classList.toggle('full', !!full);
   p.innerHTML = `<div class="ph">${h}</div><div class="pb${keepScroll ? '' : ' sec-in'}">${b}</div>${bar}`;
   p.scrollTop = keepScroll ? y : 0;
   af && af();
@@ -164,7 +169,7 @@ export async function scan() {
   emit('heat', { on: true, label: 'scanning' });
   try { st.scan = await wash.scan(wallet.W.address); if (st.scan.solUsd) st.solUsd = st.scan.solUsd; emit('scan', st.scan); }
   catch (e) { st.err = 'Couldn’t read your wallet: ' + (e.message || 'network error'); }
-  finally { st.scanning = false; emit('heat', { on: false }); renderAcct(); feed(); if (st.sec === 'wash' || st.sec === 'wanted') renderPane(); }
+  finally { st.scanning = false; emit('heat', { on: false }); renderAcct(); feed(); if (['wash', 'wanted', 'statement'].includes(st.sec)) renderPane(); }
 }
 const washer = (fast, n = 7) => `<div class="washer"><span class="knob" style="left:22px"></span><span class="knob k2" style="left:40px"></span><div class="drum${fast ? ' fast' : ''}"><div class="tumble">${
   Array.from({ length: n }, (_, i) => { const a = i / n * 6.283, r = 28 + (i % 2) * 11; return `<b class="${i % 3 ? 'dirty' : ''}" style="left:${47 + Math.cos(a) * r}px;top:${47 + Math.sin(a) * r}px"></b>`; }).join('')
@@ -382,6 +387,43 @@ function receiptsSec() {
       : `<div class="tiles"><div class="tile hl"><span class="k">Washed in total</span><div class="big mint">${ICON.sol}${sol(wash.washedTotal(a), 4)}</div></div><div class="tile"><span class="k">Washes</span><div class="big">${h.length}</div></div><div class="tile"><span class="k">Accounts closed</span><div class="big">${num(h.reduce((x, y) => x + y.n, 0), 0)}</div></div><div class="tile"><span class="k">Last</span><div class="big" style="font-size:20px">${new Date(h[0].at).toLocaleDateString([], { month: 'short', day: 'numeric' })}</div></div></div>
         <table class="tbl"><thead><tr><th>When</th><th>Accounts</th><th class="num">Back</th><th>Transactions</th></tr></thead><tbody>${h.map((x, n) => `<tr style="--n:${n}" class="rw"><td style="width:auto">${new Date(x.at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td>${x.n}</td><td class="num rent">+${sol(x.back, 4)}</td><td>${x.sigs.map((s, i) => `<a class="link" href="${solscan(s)}" target="_blank" rel="noopener">tx${x.sigs.length > 1 ? ' ' + (i + 1) : ''}</a>`).join(' · ')}</td></tr>`).join('')}</tbody></table>`,
     after: () => { const c = $('#rConnect'); if (c) c.onclick = connectFlow; } };
+}
+
+// ---------------------------------------------------------------- statement: your wallet as a bank statement
+const PAL = ['#ff4fb8', '#8ff6ff', '#ffd25a', '#8dffbe', '#c23dff', '#ff8a5c', 'rgba(255,255,255,.3)'];
+export const onWallet = () => TM.onWallet();
+function statementSec() {
+  const a = wallet.W.address, s = st.scan;
+  const h = head('Statement', 'Your wallet as a bank statement: what’s clean, what’s dirty and what it’s worth. Click a coin to trade it in the terminal.', a && s ? '<button class="ghost dark sm" id="stRe">Refresh</button>' : '');
+  if (!a) return { h, b: `<div class="empty">${washer(false)}<div><p class="copy"><b>Connect a wallet to see your statement.</b> Every coin you hold, priced live, split into clean money and dirty bags.</p><button class="cta" id="stConnect"><span>Connect wallet</span></button></div></div>`, after: () => { $('#stConnect').onclick = connectFlow; } };
+  if (!s) return { h, b: `<div class="run">${washer(true)}<p class="copy"><b>Reading your wallet…</b></p></div>`, after: () => { if (!st.scanning) setTimeout(scan, 0); } };
+  const solV = st.solUsd ? s.balance / LAMPORTS * st.solUsd : null;
+  const held = s.items.filter(i => i.raw !== '0' && !i.native);
+  const clean = held.filter(i => i.usd != null && i.usd >= 1).sort((x, y) => y.usd - x.usd);
+  const dust = held.filter(i => !(i.usd != null && i.usd >= 1)).sort((x, y) => (y.usd || 0) - (x.usd || 0));
+  const cleanV = clean.reduce((x, i) => x + i.usd, 0), dustV = dust.reduce((x, i) => x + (i.usd || 0), 0), net = (solV || 0) + cleanV + dustV;
+  const rent = s.items.filter(i => i.kind !== 'keep').reduce((x, i) => x + i.lamports, 0);
+  const parts = [['SOL', solV || 0], ...clean.slice(0, 5).map(i => [i.sym || short(i.mint), i.usd]), ['Everything else', clean.slice(5).reduce((x, i) => x + i.usd, 0) + dustV]].filter(p => p[1] > 0);
+  const tot = parts.reduce((x, p) => x + p[1], 0) || 1;
+  const SUB = '₀₁₂₃₄₅₆₇₈₉', px = v => { if (v == null) return '—'; if (v >= 1) return usd(v); if (v >= .0001) return '$' + v.toPrecision(3); const e = v.toExponential(2).split('e'), z = -parseInt(e[1], 10) - 1; return '$0.0' + String(z).split('').map(d => SUB[+d]).join('') + e[0].replace('.', ''); };
+  const row = (i, n, dirty) => { const ic = i.icon ? `<img src="${esc(i.icon)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : esc((i.sym || '?').slice(0, 3));
+    return `<tr class="rw" data-coin="${esc(i.mint)}" style="--n:${Math.min(n, 24)}"><td style="width:auto"><div class="tkn"><span class="tk">${ic}</span><div><b>${esc(i.sym || short(i.mint))}</b><small>${esc(i.name || short(i.mint))}</small></div></div></td>
+      <td class="num">${num(i.ui)}</td><td class="num hide-m">${px(i.price)}</td><td class="num"><b>${i.usd == null ? '—' : usd(i.usd)}</b></td><td class="num hide-m ${i.ch24 > 0 ? 'up' : i.ch24 < 0 ? 'dn' : ''}">${i.ch24 == null ? '—' : pct(i.ch24, 1)}</td>
+      <td class="num">${dirty ? '<span class="badge b-dust">dirty</span>' : '<span class="badge b-wsol">clean</span>'}</td></tr>`; };
+  return { h,
+    b: `<div class="tiles">
+      <div class="tile hl" style="--n:0"><span class="k">Net worth</span><div class="big mint">${usd(net)}</div><small>SOL and every coin, priced by Jupiter</small></div>
+      <div class="tile" style="--n:1"><span class="k">SOL</span><div class="big">${ICON.sol}${sol(s.balance, 4)}</div><small>${solV != null ? usd(solV) : '&nbsp;'}</small></div>
+      <div class="tile" style="--n:2"><span class="k">Clean coins</span><div class="big">${clean.length}</div><small>${usd(cleanV)} worth $1 or more each</small></div>
+      <div class="tile" style="--n:3"><span class="k">Dirty bags</span><div class="big">${dust.length + s.items.filter(i => i.kind === 'empty').length}</div><small>${sol(rent, 4)} SOL of rent to wash</small></div></div>
+    <span class="k">Where it sits</span><div class="alloc">${parts.map((p, i) => `<i style="width:${(p[1] / tot * 100).toFixed(2)}%;background:${PAL[i === parts.length - 1 && p[0] === 'Everything else' ? 6 : i % 6]}"></i>`).join('')}</div>
+    <div class="legend">${parts.map((p, i) => `<span><i style="background:${PAL[i === parts.length - 1 && p[0] === 'Everything else' ? 6 : i % 6]}"></i>${esc(p[0])} ${(p[1] / tot * 100).toFixed(1)}%</span>`).join('')}</div>
+    <table class="tbl"><thead><tr><th>Coin</th><th class="num">Amount</th><th class="num hide-m">Price</th><th class="num">Value</th><th class="num hide-m">24h</th><th class="num"></th></tr></thead><tbody>
+      <tr class="rw"><td style="width:auto"><div class="tkn"><span class="tk" style="background:linear-gradient(140deg,#14d6ea,#b23dff)">◎</span><div><b>SOL</b><small>Solana</small></div></div></td><td class="num">${sol(s.balance, 4)}</td><td class="num hide-m">${st.solUsd ? usd(st.solUsd) : '—'}</td><td class="num"><b>${solV != null ? usd(solV) : '—'}</b></td><td class="num hide-m">—</td><td class="num"><span class="badge b-wsol">clean</span></td></tr>
+      ${clean.slice(0, 120).map((i, n) => row(i, n, false)).join('')}${dust.slice(0, 120).map((i, n) => row(i, n + clean.length, true)).join('')}</tbody></table>
+    ${dust.length ? `<div class="acts"><button class="cta sm" data-sec="wash"><span>Wash the dirty ones</span></button></div>` : ''}`,
+    after: () => { const r = $('#stRe'); if (r) r.onclick = () => { st.result = null; scan(); };
+      $$('tr[data-coin]').forEach(tr => tr.onclick = () => { TM.T.sel = tr.dataset.coin; TM.T.side = 'sell'; TM.T.quote = null; show('term'); }); } };
 }
 
 // ---------------------------------------------------------------- faq
