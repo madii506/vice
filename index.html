@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VICE</title>
+<meta name="description" content="The First Neobank Funded by Dirty Bags. Wash your dead coins into clean SOL in one signature. Paired with $TTWO, the stock behind GTA. Welcome to Vice.">
+<meta name="theme-color" content="#18c2e4">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VICE">
+<meta property="og:description" content="The First Neobank Funded by Dirty Bags. Wash your dead coins into clean SOL in one signature.">
+<meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VICE">
+<meta name="twitter:description" content="The First Neobank Funded by Dirty Bags. Wash your dead coins into clean SOL in one signature.">
+<meta name="twitter:image" content="/og.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=1">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=1">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=1">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
+<link rel="preload" href="/anton.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css?v=1">
+</head>
+<body class="intro">
+<canvas id="world" aria-hidden="true"></canvas>
+<canvas id="card3d" aria-label="The VICE card. Click it to flip it."></canvas>
+<div id="card2d" hidden></div>
+
+<header id="top">
+  <a class="logo" href="/" aria-label="VICE home"><span class="chrome">VICE</span></a>
+  <nav id="nav" aria-label="Apps">
+    <button data-app="wash"><b>Wash</b></button>
+    <button data-app="card"><b>Card</b></button>
+    <button data-app="wanted"><b>Wanted</b></button>
+    <button data-app="ttwo"><b>$TTWO</b></button>
+    <button data-app="faq"><b>FAQ</b></button>
+  </nav>
+  <div class="right">
+    <a id="xlink" class="ico" hidden target="_blank" rel="noopener" aria-label="VICE on X"></a>
+    <button id="connect" class="btn-connect"><span class="dot"></span><span class="lbl">Connect</span></button>
+  </div>
+</header>
+
+<aside id="hud" aria-label="Your heat">
+  <div id="hudStars" class="hud-stars"></div>
+  <button id="hudMoney" class="hud-money" data-app="wash"><span class="cur"></span><span id="money">— — —</span></button>
+  <div id="hudTag" class="hud-tag">dirty sol</div>
+  <div id="hudPlus" class="hud-plus"></div>
+</aside>
+
+<main id="stage">
+  <h1 id="title" aria-label="The first neobank funded by dirty bags.">
+    <span class="l1"><i>The</i> <i>first</i> <i>neobank</i></span>
+    <span class="l2"><i>funded</i> <i>by</i> <i>dirty</i> <i>bags.</i></span>
+  </h1>
+  <div class="ctas">
+    <button id="go" class="cta" data-app="wash"><span>Wash my bags</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="ghost" data-app="card">Make your card</button>
+  </div>
+</main>
+
+<button id="radar" data-app="wash" aria-label="Radar: your dead coins"><canvas width="300" height="300"></canvas><span class="rlbl" id="rlbl">no heat</span></button>
+
+<div id="chips">
+  <div id="caChip" class="chip ca" hidden></div>
+  <button id="gtaChip" class="chip" data-app="ttwo"><span class="k">GTA VI</span><b id="gtaT">—</b></button>
+  <button id="ttwoChip" class="chip" data-app="ttwo"><span class="k">$TTWO</span><b id="ttwoP">—</b><i id="ttwoC"></i></button>
+</div>
+
+<div id="tape" aria-hidden="true"><div class="tape-in" id="tapeIn"></div></div>
+
+<section id="phone" aria-hidden="true" aria-label="VICE app">
+  <div class="ph">
+    <div class="ph-bar"><span id="phClock">9:41</span><span class="ph-carrier">VICE</span><span class="ph-bat"><i></i></span></div>
+    <div class="ph-screen" id="screen"></div>
+    <div class="ph-home" id="phHome" title="Home"></div>
+  </div>
+</section>
+
+<div id="passed" aria-live="polite" hidden>
+  <div class="mp">
+    <div class="mp-t" id="mpT">Mission passed</div>
+    <div class="mp-a" id="mpA"></div>
+    <div class="mp-s" id="mpS"></div>
+    <div class="mp-b"><button class="cta sm" id="mpCard">Make your card</button><button class="ghost sm" id="mpClose">Keep washing</button></div>
+  </div>
+  <div class="mp-rain" id="mpRain"></div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<noscript><p class="nojs">VICE needs JavaScript to wash your bags.</p></noscript>
+<script type="module" src="/main.js?v=1"></script>
+</body>
+</html>
