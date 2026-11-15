@@ -12,7 +12,7 @@ const WIN = ['#ffe29a', '#ff9bd8', '#9af3ff'];
 
 export function startWorld(cv, { reduced = false } = {}) {
   const g = cv.getContext('2d');
-  const S = { t0: performance.now(), w: 0, h: 0, dpr: 1, hz: 0, mx: 0, my: 0, tmx: 0, tmy: 0, heat: 0, heatTo: 0, paused: false, heli: { x: -1, dir: -1, next: 4 }, birds: [], sparks: [] };
+  const S = { t0: performance.now(), w: 0, h: 0, dpr: 1, hz: 0, mx: 0, my: 0, tmx: 0, tmy: 0, heat: 0, heatTo: 0, paused: false, heli: { x: -1, dir: -1, next: 4 }, birds: [], sparks: [], zoom: 1, zoomTo: 1, zr: .08, dim: 0, dimTo: 0, skip: 0 };
   let L = {};   // pre-rendered layers
 
   function layers() {
@@ -99,8 +99,13 @@ export function startWorld(cv, { reduced = false } = {}) {
     if (S.paused || document.hidden) return;
     const t = reduced ? 30 : (now - S.t0) / 1000, { w, h, hz } = S, dt = 1 / 60;
     S.mx += (S.tmx - S.mx) * .05; S.my += (S.tmy - S.my) * .05; S.heat += (S.heatTo - S.heat) * .06;
+    S.zoom += (S.zoomTo - S.zoom) * S.zr; S.dim += (S.dimTo - S.dim) * .06;
+    // inside the world the backdrop only needs 30 fps
+    if (S.dim > .3 && S.zoomTo < 1.2 && (S.skip = (S.skip + 1) % 2)) return;
     const px = k => -S.mx * k;
-    g.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    // the dive: everything scales around the sun
+    const z = S.zoom, zx = w / 2, zy = hz * .9;
+    g.setTransform(S.dpr * z, 0, 0, S.dpr * z, S.dpr * zx * (1 - z), S.dpr * zy * (1 - z));
     // intro timing
     const kSky = ease(t / .9), kSun = ease((t - .1) / 1.6), kCity = ease((t - .45) / 1.1), kWin = clamp((t - 1.1) / 1.2, 0, 1), kGrid = ease((t - .8) / 1.2), kPalm = ease((t - .5) / 1.3);
     g.drawImage(L.sky, 0, 0, w, hz);
@@ -162,6 +167,9 @@ export function startWorld(cv, { reduced = false } = {}) {
     }
     // the dusk curtain lifting at the start
     if (kSky < 1) { g.fillStyle = `rgba(27,7,56,${1 - kSky})`; g.fillRect(0, 0, w, h); }
+    // inside the world: a dusk veil so the app reads on top
+    g.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    if (S.dim > .005) { g.fillStyle = `rgba(16,4,38,${S.dim})`; g.fillRect(0, 0, w, h); }
   }
 
   function seaFx(t, kSun, kGrid, sx0, r, px) {
@@ -243,6 +251,10 @@ export function startWorld(cv, { reduced = false } = {}) {
   requestAnimationFrame(frame);
   return {
     heat(on) { S.heatTo = on ? 1 : 0; },
+    // dive into the sun, then settle inside behind the app
+    dive() { S.zr = .055; S.zoomTo = 2.1; setTimeout(() => { S.zr = .07; S.zoomTo = 1.06; S.dimTo = .52; }, 650); },
+    inside() { S.zr = 1; S.zoom = S.zoomTo = 1.06; S.dim = S.dimTo = .52; },
+    leave() { S.zr = .07; S.zoomTo = 1; S.dimTo = 0; },
     pause(p) { S.paused = !!p; },
   };
 }

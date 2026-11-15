@@ -21,63 +21,46 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
 <link rel="preload" href="/anton.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/app.css?v=1">
+<link rel="stylesheet" href="/app.css?v=2">
 </head>
 <body class="intro">
 <canvas id="world" aria-hidden="true"></canvas>
 <canvas id="card3d" aria-label="The VICE card. Click it to flip it."></canvas>
 <div id="card2d" hidden></div>
+<div id="flash" aria-hidden="true"></div>
 
-<header id="top">
-  <a class="logo" href="/" aria-label="VICE home"><span class="chrome">VICE</span></a>
-  <nav id="nav" aria-label="Apps">
-    <button data-app="wash"><b>Wash</b></button>
-    <button data-app="card"><b>Card</b></button>
-    <button data-app="wanted"><b>Wanted</b></button>
-    <button data-app="ttwo"><b>$TTWO</b></button>
-    <button data-app="faq"><b>FAQ</b></button>
-  </nav>
-  <div class="right">
-    <a id="xlink" class="ico" hidden target="_blank" rel="noopener" aria-label="VICE on X"></a>
-    <button id="connect" class="btn-connect"><span class="dot"></span><span class="lbl">Connect</span></button>
-  </div>
-</header>
-
-<aside id="hud" aria-label="Your heat">
-  <div id="hudStars" class="hud-stars"></div>
-  <button id="hudMoney" class="hud-money" data-app="wash"><span class="cur"></span><span id="money">— — —</span></button>
-  <div id="hudTag" class="hud-tag">dirty sol</div>
-  <div id="hudPlus" class="hud-plus"></div>
-</aside>
-
-<main id="stage">
+<main id="home">
   <h1 id="title" aria-label="The first neobank funded by dirty bags.">
     <span class="l1"><i>The</i> <i>first</i> <i>neobank</i></span>
     <span class="l2"><i>funded</i> <i>by</i> <i>dirty</i> <i>bags.</i></span>
   </h1>
   <div class="ctas">
-    <button id="go" class="cta" data-app="wash"><span>Wash my bags</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    <button class="ghost" data-app="card">Make your card</button>
+    <button id="enter" class="cta"><span>Enter world</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="homeConnect" class="ghost"><span class="dot"></span><span class="lbl">Connect wallet</span></button>
   </div>
 </main>
 
-<button id="radar" data-app="wash" aria-label="Radar: your dead coins"><canvas width="300" height="300"></canvas><span class="rlbl" id="rlbl">no heat</span></button>
-
-<div id="chips">
-  <div id="caChip" class="chip ca" hidden></div>
-  <button id="gtaChip" class="chip" data-app="ttwo"><span class="k">GTA VI</span><b id="gtaT">—</b></button>
-  <button id="ttwoChip" class="chip" data-app="ttwo"><span class="k">$TTWO</span><b id="ttwoP">—</b><i id="ttwoC"></i></button>
+<div id="app" hidden>
+  <header class="tb">
+    <button class="brand" id="leave" aria-label="Back to the street"><span class="chrome">VICE</span></button>
+    <nav id="tabs" aria-label="Sections">
+      <button data-sec="wash">Wash</button><button data-sec="card">Card</button><button data-sec="wanted">Wanted</button><button data-sec="ttwo">$TTWO</button><button data-sec="receipts">Receipts</button><button data-sec="faq">FAQ</button>
+    </nav>
+    <div class="tb-r">
+      <span class="pill" id="tbGta"><span class="k">GTA VI</span><b id="tbGtaT">—</b></span>
+      <a id="xlink" class="ico" hidden target="_blank" rel="noopener" aria-label="VICE on X"></a>
+      <button id="wbtn" class="btn-connect"><span class="dot"></span><span class="lbl">Connect</span></button>
+    </div>
+  </header>
+  <div class="grid">
+    <aside class="col acct" id="acct"></aside>
+    <section class="col pane" id="pane" aria-live="polite"></section>
+    <aside class="col live" id="live"></aside>
+  </div>
+  <div id="tape" aria-hidden="true"><div class="tape-in" id="tapeIn"></div></div>
 </div>
 
-<div id="tape" aria-hidden="true"><div class="tape-in" id="tapeIn"></div></div>
-
-<section id="phone" aria-hidden="true" aria-label="VICE app">
-  <div class="ph">
-    <div class="ph-bar"><span id="phClock">9:41</span><span class="ph-carrier">VICE</span><span class="ph-bat"><i></i></span></div>
-    <div class="ph-screen" id="screen"></div>
-    <div class="ph-home" id="phHome" title="Home"></div>
-  </div>
-</section>
+<div id="modal" hidden><div class="mbox" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mhead"><h3 id="mTitle">Connect wallet</h3><button class="ib" id="mClose" aria-label="Close"></button></div><div id="mBody"></div></div></div>
 
 <div id="passed" aria-live="polite" hidden>
   <div class="mp">
@@ -91,6 +74,6 @@
 
 <div id="toasts" aria-live="polite"></div>
 <noscript><p class="nojs">VICE needs JavaScript to wash your bags.</p></noscript>
-<script type="module" src="/main.js?v=1"></script>
+<script type="module" src="/main.js?v=2"></script>
 </body>
 </html>
